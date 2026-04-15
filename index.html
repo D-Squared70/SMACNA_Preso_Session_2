@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SMACNA AI Summit — Foreman Training</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Outfit:wght@200;300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080C;
+    --text: #E8E6E1;
+    --text-dim: #6B6960;
+    --text-mid: #9E9A90;
+    --grid-line: rgba(232, 230, 225, 0.03);
+    --grid-line-accent: rgba(232, 230, 225, 0.06);
+    --nav-line: rgba(232, 230, 225, 0.12);
+    --box-border: rgba(232, 230, 225, 0.14);
+    --box-bg: rgba(232, 230, 225, 0.03);
+
+    --ch1: #C9963B;
+    --ch2: #5B9E6F;
+    --ch3: #C4604A;
+    --ch4: #C27849;
+    --ch5: #5A8CB5;
+    --ch6: #C9963B;
+
+    --accent: var(--ch1);
+    --hl-bg: rgba(201, 150, 59, 0.3);
+
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+  }
+
+  .grid-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(var(--grid-line-accent) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line-accent) 1px, transparent 1px);
+    background-size: 30px 30px, 30px 30px, 150px 150px, 150px 150px;
+  }
+
+  .slide-counter {
+    position: fixed; top: 36px; right: 48px; z-index: 100;
+    font-family: var(--font-mono); font-size: 13px;
+    color: var(--text-dim); letter-spacing: 0.05em; font-weight: 400;
+  }
+  .slide-counter .current-num { color: var(--text-mid); }
+
+  /* ── Chapter Nav ── */
+  .chapter-nav {
+    position: fixed; left: 24px; top: 50%; transform: translateY(-50%);
+    z-index: 100;
+  }
+  .nav-track {
+    display: flex; flex-direction: column; align-items: flex-start;
+    position: relative;
+  }
+  .nav-track::before {
+    content: ''; position: absolute;
+    left: 4px; top: 8px; bottom: 8px;
+    width: 1px; background: var(--nav-line);
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 0; cursor: pointer; position: relative;
+    transition: all 0.4s cubic-bezier(0.25, 0, 0.2, 1);
+  }
+  .nav-marker {
+    width: 9px; height: 9px; border-radius: 1px;
+    border: 1.5px solid var(--text-dim);
+    background: transparent;
+    transition: all 0.4s cubic-bezier(0.25, 0, 0.2, 1);
+    flex-shrink: 0; transform: rotate(45deg);
+  }
+  .nav-item.active .nav-marker {
+    background: var(--accent); border-color: var(--accent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  .nav-item.visited .nav-marker {
+    background: var(--text-dim); border-color: var(--text-dim);
+  }
+  .nav-label {
+    font-family: var(--font-mono); font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: transparent; white-space: nowrap;
+    transition: all 0.4s cubic-bezier(0.25, 0, 0.2, 1);
+    font-weight: 400;
+  }
+  .nav-item.active .nav-label { color: var(--accent); }
+  .nav-item:hover .nav-label { color: var(--text-dim); }
+
+  /* ── Slides ── */
+  .slides-container { position: fixed; inset: 0; z-index: 10; }
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 120px 60px 120px;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.5s cubic-bezier(0.25, 0, 0.2, 1), visibility 0.5s;
+  }
+  .slide.active { opacity: 1; visibility: visible; }
+  .slide-inner {
+    width: 100%; max-width: 1200px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; min-height: 0;
+  }
+
+  /* ── Typography ── */
+  .section-title {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(36px, 4.5vw, 64px); line-height: 1.1;
+    color: var(--text); letter-spacing: -0.02em;
+  }
+  .section-title .accent { color: var(--accent); }
+  .tool-number {
+    font-family: var(--font-mono); font-weight: 300;
+    font-size: 13px; color: var(--accent);
+    letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .body-text {
+    font-family: var(--font-body); font-weight: 300;
+    font-size: clamp(16px, 1.6vw, 22px);
+    color: var(--text-mid); line-height: 1.6; max-width: 700px;
+  }
+
+  /* ── Prompt Display ── */
+  .prompt-container {
+    width: 100%; max-width: 1050px;
+    background: rgba(12, 12, 18, 0.88);
+    border: 1px solid var(--box-border);
+    border-radius: 4px; padding: 28px 32px;
+    position: relative; overflow: hidden;
+  }
+  .prompt-container::before {
+    content: ''; position: absolute;
+    left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--accent);
+  }
+  .prompt-title {
+    font-family: var(--font-mono); font-weight: 500;
+    font-size: 11px; color: var(--accent);
+    letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 18px;
+  }
+  .prompt-text {
+    font-family: var(--font-mono); font-weight: 400;
+    font-size: 12.5px; line-height: 1.75;
+    color: var(--text-mid); white-space: pre-wrap; word-wrap: break-word;
+  }
+  .prompt-text .hl {
+    color: #fff;
+    background: var(--hl-bg);
+    padding: 2px 5px; border-radius: 2px;
+    border-bottom: 1.5px solid var(--accent);
+  }
+
+  .prompt-scroll-wrapper {
+    width: 100%; max-width: 1050px;
+    max-height: calc(100vh - 140px);
+    overflow-y: auto; overflow-x: hidden;
+    scrollbar-width: thin; scrollbar-color: var(--text-dim) transparent;
+  }
+  .prompt-scroll-wrapper::-webkit-scrollbar { width: 4px; }
+  .prompt-scroll-wrapper::-webkit-scrollbar-track { background: transparent; }
+  .prompt-scroll-wrapper::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 2px; }
+
+  /* ── Tool Cards ── */
+  .three-tools-grid {
+    display: flex; gap: 32px; width: 100%; max-width: 1050px; justify-content: center;
+  }
+  .tool-card {
+    flex: 1; max-width: 300px;
+    border: 1px solid var(--box-border); border-radius: 4px;
+    padding: 36px 28px; background: var(--box-bg);
+    display: flex; flex-direction: column; align-items: flex-start; gap: 16px;
+    transition: border-color 0.3s;
+  }
+  .tool-card:hover { border-color: var(--accent); }
+  .tool-card-icon { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; }
+  .tool-card-icon svg { width: 100%; height: 100%; }
+  .tool-card-num { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; font-weight: 500; }
+  .tool-card-name { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--text); line-height: 1.2; }
+  .tool-card-desc { font-family: var(--font-body); font-size: 14px; color: var(--text-dim); line-height: 1.5; font-weight: 300; }
+
+  /* ── Toggle Steps ── */
+  .toggle-visual { display: flex; flex-direction: column; gap: 20px; align-items: center; }
+  .toggle-step {
+    display: flex; align-items: center; gap: 20px;
+    padding: 14px 24px; border-radius: 4px;
+    border: 1px solid var(--box-border); background: var(--box-bg); min-width: 360px;
+  }
+  .toggle-step-num { font-family: var(--font-mono); font-size: 24px; font-weight: 600; color: var(--accent); width: 40px; text-align: center; flex-shrink: 0; }
+  .toggle-step-text { font-family: var(--font-body); font-size: 18px; color: var(--text); font-weight: 400; }
+
+  /* ── Platform Grid ── */
+  .platform-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; width: 100%; max-width: 900px; }
+  .platform-card { padding: 28px 20px; text-align: center; border: 1px solid var(--box-border); border-radius: 4px; background: var(--box-bg); }
+  .platform-name { font-family: var(--font-body); font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 8px; }
+  .platform-feature { font-family: var(--font-mono); font-size: 14px; color: var(--accent); font-weight: 400; }
+
+  /* ── Metaphor ── */
+  .metaphor-row { display: flex; align-items: center; gap: 40px; justify-content: center; }
+  .metaphor-box { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .metaphor-circle {
+    width: 100px; height: 100px; border-radius: 50%;
+    border: 2px solid var(--box-border); background: var(--box-bg);
+    display: flex; align-items: center; justify-content: center; font-size: 36px;
+  }
+  .metaphor-circle.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .metaphor-text { font-family: var(--font-body); font-size: 15px; color: var(--text-mid); text-align: center; max-width: 140px; font-weight: 300; }
+
+  /* ── Demo Table ── */
+  .demo-table { width: 100%; max-width: 950px; border-collapse: collapse; font-family: var(--font-mono); font-size: 13px; }
+  .demo-table th { text-align: left; padding: 10px 16px; border-bottom: 2px solid color-mix(in srgb, var(--accent) 40%, transparent); color: var(--accent); font-weight: 500; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .demo-table td { padding: 10px 16px; border-bottom: 1px solid rgba(232, 230, 225, 0.06); color: var(--text-mid); font-weight: 400; }
+  .demo-table tr:hover td { color: var(--text); }
+
+  /* ── Iteration Flow ── */
+  .iteration-visual { display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 750px; }
+  .iter-box {
+    padding: 18px 36px; border-radius: 4px;
+    border: 2px solid var(--box-border); background: rgba(12, 12, 18, 0.92);
+    font-family: var(--font-body); font-size: 17px;
+    color: var(--text); text-align: center;
+    width: 100%; max-width: 460px;
+  }
+  .iter-box.accent-box {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+    color: var(--accent);
+  }
+  .iter-arrow-down {
+    display: flex; flex-direction: column; align-items: center;
+    height: 32px; justify-content: center;
+  }
+  .iter-arrow-down .shaft { width: 2px; height: 20px; background: var(--accent); opacity: 0.5; }
+  .iter-arrow-down .head { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid var(--accent); opacity: 0.5; }
+  .iter-box-sm {
+    padding: 14px 24px; border-radius: 4px;
+    border: 2px solid var(--box-border); background: rgba(12, 12, 18, 0.92);
+    font-family: var(--font-body); font-size: 15px;
+    color: var(--text); text-align: center; max-width: 260px; width: 100%;
+  }
+  .iter-box-sm.accent-box {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+    color: var(--accent);
+  }
+  .iter-branch-label {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text-dim); letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 8px;
+  }
+
+  /* ── Cross Reference ── */
+  .cross-ref { display: flex; align-items: center; gap: 24px; justify-content: center; }
+  .cross-ref-doc { padding: 24px 28px; border-radius: 4px; border: 1px solid var(--box-border); background: var(--box-bg); min-width: 200px; text-align: center; }
+  .cross-ref-doc-title { font-family: var(--font-mono); font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .cross-ref-doc-desc { font-family: var(--font-body); font-size: 16px; color: var(--text); font-weight: 400; }
+  .cross-ref-plus { font-family: var(--font-display); font-size: 36px; color: var(--text-dim); }
+  .cross-ref-result { padding: 24px 28px; border-radius: 4px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); min-width: 200px; text-align: center; }
+
+  /* ── RFI Transform ── */
+  .rfi-transform { display: flex; align-items: stretch; gap: 32px; justify-content: center; width: 100%; max-width: 950px; }
+  .rfi-block { flex: 1; padding: 24px 28px; border-radius: 4px; border: 1px solid var(--box-border); background: rgba(12, 12, 18, 0.88); }
+  .rfi-block.result { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--bg)); }
+  .rfi-block-title { font-family: var(--font-mono); font-size: 11px; color: var(--accent); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
+  .rfi-block-content { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7; color: var(--text-mid); white-space: pre-wrap; }
+
+  /* ── Flow Row ── */
+  .flow-row { display: flex; align-items: center; gap: 0; justify-content: center; }
+  .flow-box {
+    padding: 18px 28px; border-radius: 4px;
+    border: 1px solid var(--box-border); background: var(--box-bg);
+    font-family: var(--font-body); font-weight: 400;
+    font-size: 16px; color: var(--text); text-align: center; white-space: nowrap;
+  }
+  .flow-box.highlight {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+  }
+
+  /* ── QR Code ── */
+  .qr-code {
+    width: 400px; height: 400px;
+    border-radius: 12px;
+    object-fit: contain;
+  }
+  .qr-link { font-family: var(--font-mono); font-size: 18px; color: var(--accent); letter-spacing: 0.02em; margin-top: 16px; font-weight: 500; }
+
+  /* ── Breakout ── */
+  .breakout-container { width: 100%; max-width: 850px; }
+  .breakout-title { font-family: var(--font-mono); font-weight: 500; font-size: 11px; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 24px; }
+  .breakout-steps { display: flex; flex-direction: column; gap: 12px; }
+  .breakout-step { display: flex; align-items: flex-start; gap: 16px; padding: 12px 20px; border-radius: 4px; border: 1px solid rgba(232, 230, 225, 0.04); }
+  .breakout-step-num { font-family: var(--font-mono); font-size: 14px; color: var(--accent); font-weight: 500; width: 24px; flex-shrink: 0; text-align: right; }
+  .breakout-step-text { font-family: var(--font-body); font-size: 16px; color: var(--text); font-weight: 300; line-height: 1.5; }
+  .breakout-step-text strong { font-weight: 500; }
+
+  /* ── Recap ── */
+  .recap-items { display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 800px; }
+  .recap-item {
+    display: flex; align-items: center; gap: 24px;
+    padding: 20px 28px; border-radius: 4px;
+    border: 1px solid rgba(232, 230, 225, 0.04);
+    background: rgba(232, 230, 225, 0.01);
+    opacity: 0.15;
+    transition: all 0.5s cubic-bezier(0.25, 0, 0.2, 1);
+  }
+  .recap-item.revealed { opacity: 0.3; }
+  .recap-item.active-recap {
+    opacity: 1; border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 5%, transparent);
+  }
+  .recap-num { font-family: var(--font-display); font-weight: 700; font-size: 36px; color: var(--accent); width: 50px; text-align: center; flex-shrink: 0; }
+  .recap-name { font-family: var(--font-body); font-weight: 500; font-size: 20px; color: var(--text); }
+  .recap-desc { font-family: var(--font-body); font-weight: 300; font-size: 14px; color: var(--text-dim); }
+
+  /* ── Mentality ── */
+  .mentality-loop { display: flex; align-items: center; gap: 0; justify-content: center; }
+  .mentality-step { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .mentality-circle {
+    width: 100px; height: 100px; border-radius: 50%;
+    border: 2px solid var(--box-border); background: rgba(12, 12, 18, 0.92);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-body); font-size: 16px; font-weight: 500; color: var(--text);
+  }
+  .mentality-circle.accent-circle {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    color: var(--accent);
+  }
+  .mentality-label { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ── Tip Bar ── */
+  .tip-bar {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 18px; border-radius: 4px;
+    border: 1px solid var(--box-border); background: var(--box-bg); margin-top: 20px;
+  }
+  .tip-icon { font-family: var(--font-mono); font-size: 11px; color: var(--accent); font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; flex-shrink: 0; }
+  .tip-text { font-family: var(--font-body); font-size: 14px; color: var(--text-dim); font-weight: 300; }
+
+  /* ── Animations ── */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .slide.active .slide-inner > * {
+    animation: fadeInUp 0.5s cubic-bezier(0.25, 0, 0.2, 1) forwards;
+    opacity: 0;
+  }
+  .slide.active .slide-inner > *:nth-child(1) { animation-delay: 0.05s; }
+  .slide.active .slide-inner > *:nth-child(2) { animation-delay: 0.15s; }
+  .slide.active .slide-inner > *:nth-child(3) { animation-delay: 0.25s; }
+  .slide.active .slide-inner > *:nth-child(4) { animation-delay: 0.35s; }
+  .slide.active .slide-inner > *:nth-child(5) { animation-delay: 0.45s; }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<div class="slide-counter">
+  <span class="current-num" id="currentSlide">1</span><span> / </span><span id="totalSlides">23</span>
+</div>
+
+<nav class="chapter-nav">
+  <div class="nav-track" id="navTrack"></div>
+</nav>
+
+<div class="slides-container" id="slidesContainer">
+
+  <!-- ══════════ CH 1: THE PROMISE ══════════ -->
+
+  <div class="slide" data-chapter="0">
+    <div class="slide-inner" style="gap:32px;">
+      <div class="three-tools-grid">
+        <div class="tool-card">
+          <div class="tool-card-icon"><svg viewBox="0 0 48 48" fill="none"><path d="M10 12 L24 6 L38 12 L38 36 L24 42 L10 36 Z" stroke="var(--accent)" stroke-width="1.5" fill="none"/><line x1="16" y1="20" x2="32" y2="20" stroke="var(--accent)" stroke-width="1" opacity="0.5"/><line x1="16" y1="26" x2="32" y2="26" stroke="var(--accent)" stroke-width="1" opacity="0.5"/><line x1="16" y1="32" x2="26" y2="32" stroke="var(--accent)" stroke-width="1" opacity="0.5"/></svg></div>
+          <div class="tool-card-num">Tool 01</div>
+          <div class="tool-card-name">RFI Creator</div>
+          <div class="tool-card-desc">Turn field notes into professional RFIs</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-card-icon"><svg viewBox="0 0 48 48" fill="none"><rect x="8" y="6" width="32" height="36" rx="2" stroke="var(--accent)" stroke-width="1.5"/><line x1="14" y1="16" x2="34" y2="16" stroke="var(--accent)" stroke-width="1" opacity="0.5"/><line x1="14" y1="22" x2="34" y2="22" stroke="var(--accent)" stroke-width="1" opacity="0.5"/><line x1="14" y1="28" x2="28" y2="28" stroke="var(--accent)" stroke-width="1" opacity="0.5"/><line x1="14" y1="34" x2="24" y2="34" stroke="var(--accent)" stroke-width="1" opacity="0.5"/></svg></div>
+          <div class="tool-card-num">Tool 02</div>
+          <div class="tool-card-name">Material Order List</div>
+          <div class="tool-card-desc">Generate material shopping lists from drawings</div>
+        </div>
+        <div class="tool-card">
+          <div class="tool-card-icon"><svg viewBox="0 0 48 48" fill="none"><rect x="6" y="8" width="22" height="32" rx="2" stroke="var(--accent)" stroke-width="1.5"/><rect x="20" y="8" width="22" height="32" rx="2" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/><path d="M17 24 L31 24" stroke="var(--accent)" stroke-width="1.5"/><circle cx="17" cy="24" r="2" fill="var(--accent)"/><circle cx="31" cy="24" r="2" fill="var(--accent)"/></svg></div>
+          <div class="tool-card-num">Tool 03</div>
+          <div class="tool-card-name">Diffuser Takeoff</div>
+          <div class="tool-card-desc">Create diffuser order lists from plans and schedules</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ CH 2: SETUP ══════════ -->
+
+  <div class="slide" data-chapter="1">
+    <div class="slide-inner" style="gap:28px;">
+      <div class="section-title" style="font-size:clamp(32px,4vw,52px);">Data Privacy in <span class="accent">3 Clicks</span></div>
+      <div class="toggle-visual">
+        <div class="toggle-step"><div class="toggle-step-num">1</div><div class="toggle-step-text">Settings</div></div>
+        <div class="toggle-step"><div class="toggle-step-num">2</div><div class="toggle-step-text">Data Controls</div></div>
+        <div class="toggle-step"><div class="toggle-step-num">3</div><div class="toggle-step-text">Turn off "Improve the model for everyone"</div></div>
+      </div>
+      <div class="tip-bar">
+        <div class="tip-icon">Note</div>
+        <div class="tip-text">Business accounts (ChatGPT Team, Google Workspace, Microsoft 365) are more secure — but still check settings and follow your company's policy.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-chapter="1">
+    <div class="slide-inner" style="gap:32px;">
+      <div class="section-title">What is a <span class="accent">Project?</span></div>
+      <div class="metaphor-row">
+        <div class="metaphor-box">
+          <div class="metaphor-circle">📋</div>
+          <div class="metaphor-text">You explain everything once</div>
+        </div>
+        <div style="font-size:28px; color:var(--text-dim);">→</div>
+        <div class="metaphor-box">
+          <div class="metaphor-circle active">🧠</div>
+          <div class="metaphor-text">AI remembers it every time</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="slide" data-chapter="1">
+    <div class="slide-inner" style="gap:28px;">
+      <div class="section-title" style="font-size:clamp(28px,3.2vw,42px);">Same Concept, <span class="accent">Every Tool</span></div>
+      <div class="platform-grid">
+        <div class="platform-card"><div class="platform-name">ChatGPT</div><div class="platform-feature">Project</div></div>
+        <div class="platform-card"><div class="platform-name">Claude</div><div class="platform-feature">Project</div></div>
+        <div class="platform-card"><div class="platform-name">Gemini</div><div class="platform-feature">Gem</div></div>
+        <div class="platform-card"><div class="platform-name">Copilot</div><div class="platform-feature">Agent</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ CH 3: RFI CREATOR ══════════ -->
+
+  <div class="slide" data-chapter="2">
+    <div class="slide-inner" style="gap:12px;">
+      <div class="tool-number">Tool 01</div>
+      <div class="section-title"><span class="accent">RFI</span> Creator</div>
+      <div class="body-text" style="text-align:center; margin-top:8px;">Turn field notes into professional RFIs</div>
+    </div>
+  </div>
+
+  <!-- RFI Transform -->
+  <div class="slide" data-chapter="2">
+    <div class="slide-inner" style="gap:24px;">
+      <div class="rfi-transform">
+        <div class="rfi-block">
+          <div class="rfi-block-title">What you say</div>
+          <div class="rfi-block-content" style="font-style:italic;">"Third floor east wing, rooms 301–305. The 24-inch main won't fit — only 18 inches of clearance under the beam. Need to reroute above the beam or reduce the duct with a transition. Drawings M-401 and S-301."</div>
+        </div>
+        <div class="rfi-block result">
+          <div class="rfi-block-title">What AI writes</div>
+          <div class="rfi-block-content">To: [GC / Architect]
+Subject: RFI — Duct Clearance Conflict
+Reference: M-401, S-301
+
+Description:
+The 24" main duct below the steel beam
+has only 18" of available clearance...
+
+Proposed Solution:
+Reroute above beam or reduce duct size
+with transition fitting.
+
+Impact:
+May affect finished ceiling height.
+Architect review recommended.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Prompt — RFI Creator -->
+  <div class="slide" data-chapter="2">
+    <div class="slide-inner" style="gap:0; align-items:center; justify-content:flex-start; padding-top:20px;">
+      <div class="prompt-scroll-wrapper">
+        <div class="prompt-container">
+          <div class="prompt-title">System Prompt — RFI Creator</div>
+          <div class="prompt-text">Role:
+You are a <span class="hl">Construction Project Manager</span> for MacDonald-Miller Facility
+Solutions. Your job is to take <span class="hl">rough field notes or voice transcripts</span>
+and convert them into a professional RFI (Request for Information)
+email or document.
+
+Input:
+Rough notes describing a conflict between drawings, field conditions,
+or specifications.
+
+Output Rule (CRITICAL):
+You must output the final RFI text inside a <span class="hl">Markdown Code Block</span> so
+the user can copy/paste it directly into an email or Word doc without
+formatting errors.
+
+Content Guidelines:
+1. Tone: Clear, simple, direct, and <span class="hl">solution-oriented</span>.
+2. Structure:
+   - Header: To, Subject, Project, References (Drawings/Specs).
+   - Body: Clearly state the conflict (e.g., "Drawing A shows X,
+     but Drawing B shows Y").
+   - Solution: <span class="hl">Always propose a solution</span> if the input suggests one
+     (e.g., "Please confirm [Solution] is acceptable").
+   - Impact: State if this has a cost/schedule impact. If the input
+     implies a simple swap, state: "A confirmation of this change
+     will not result in a request for additional costs."
+
+Example Output Format:
+To: [General Contractor / Architect]
+Subject: RFI - [Brief Description of Issue]
+Project: [Project Name]
+Reference Drawings: [Drawing Numbers]
+
+Description of Clarification or Request:
+[Formal description of the conflict.]
+
+Proposed Solution:
+[The Foreman's suggested fix.]
+
+Impact:
+[Cost/Schedule Note.]
+
+<span class="hl">Grounding Rule</span>: Only use information the user provides. Do not
+invent drawing numbers, room names, or details. If something is
+unclear, ask — <span class="hl">do not guess</span>. A blank field is better than a
+wrong one.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Voice → RFI Flow -->
+  <div class="slide" data-chapter="2">
+    <div class="slide-inner" style="gap:28px;">
+      <div class="section-title" style="font-size:clamp(26px,3vw,40px);">Talk Into Your Phone. <span class="accent">Get a Clean RFI.</span></div>
+      <div class="flow-row">
+        <div class="flow-box">🎤 Voice or text</div>
+        <svg width="48" height="24" viewBox="0 0 48 24" style="flex-shrink:0;"><path d="M4 12 L38 12" stroke="var(--text-dim)" stroke-width="1.5"/><polygon points="36,7 44,12 36,17" fill="var(--text-dim)"/></svg>
+        <div class="flow-box">AI structures it</div>
+        <svg width="48" height="24" viewBox="0 0 48 24" style="flex-shrink:0;"><path d="M4 12 L38 12" stroke="var(--text-dim)" stroke-width="1.5"/><polygon points="36,7 44,12 36,17" fill="var(--text-dim)"/></svg>
+        <div class="flow-box highlight">Copy → paste → send</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code — RFI -->
+  <div class="slide" data-chapter="2">
+    <div class="slide-inner" style="gap:20px;">
+      <div class="tool-number">Scan to Get the Starter Prompt</div>
+      <div class="section-title" style="font-size:clamp(24px,2.8vw,36px);"><span class="accent">RFI</span> Creator</div>
+      <img class="qr-code" src="elegant_qr_drive_folder_2.png" alt="QR Code — Scan to access the RFI Creator prompt">
+
+    </div>
+  </div>
+
+  <!-- Breakout 1 -->
+  <div class="slide" data-chapter="2">
+    <div class="slide-inner" style="gap:0; align-items:center; justify-content:flex-start; padding-top:50px;">
+      <div class="breakout-container">
+        <div class="breakout-title">Breakout — Build Your RFI Creator (15 min)</div>
+        <div class="breakout-steps">
+          <div class="breakout-step"><div class="breakout-step-num">1</div><div class="breakout-step-text">Create a <strong>new Project</strong> → name it "RFI Creator"</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">2</div><div class="breakout-step-text"><strong>Paste</strong> the starter instructions from the QR code</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">3</div><div class="breakout-step-text"><strong>Describe a real field problem</strong> — voice or type. Or use the fallback scenario.</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">4</div><div class="breakout-step-text">Check: Professional tone? Clear solution? Copy-paste ready?</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">5</div><div class="breakout-step-text">Compare AI's version to what you would have written</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ CH 4: MATERIAL ORDER LIST ══════════ -->
+
+  <div class="slide" data-chapter="3">
+    <div class="slide-inner" style="gap:12px;">
+      <div class="tool-number">Tool 02</div>
+      <div class="section-title"><span class="accent">Material</span> Order List</div>
+      <div class="body-text" style="text-align:center; margin-top:8px;">Generate material shopping lists from drawings</div>
+    </div>
+  </div>
+
+  <!-- System Prompt — Material Order List -->
+  <div class="slide" data-chapter="3">
+    <div class="slide-inner" style="gap:0; align-items:center; justify-content:flex-start; padding-top:20px;">
+      <div class="prompt-scroll-wrapper">
+        <div class="prompt-container">
+          <div class="prompt-title">System Prompt — Material Order List</div>
+          <div class="prompt-text">Role:
+You are a <span class="hl">veteran Sheet Metal Foreman</span>. You create practical "Buyout
+Commodity Lists" for the shop or vendor (Gensco/Dorse).
+
+Goal:
+Create a list of raw materials (commodities) from the drawing.
+<span class="hl">Do NOT list finished devices</span> like fans or diffusers.
+
+Strict Rules (The "Field" Logic):
+1. <span class="hl">Snap Lock Rule</span>: For round duct, unless specified as "Spiral,"
+   assume "Snap Lock" pipe. Count it in 5-foot lengths/joints
+   (1 branch = 1 joint/stick).
+2. <span class="hl">Damper Rule</span>: Replace "Spin-ins" with "ATTOs with Jiffy Dampers."
+3. <span class="hl">Sealant Rule</span>: Default to Mastic/Fiber Seal. Do NOT list foil
+   tape unless explicitly requested.
+4. <span class="hl">No Devices</span>: Do NOT include Diffusers, Grilles, or VAV boxes
+   in this list.
+
+Terminology:
+Use the provided catalog (Gensco/Dorse) for item names. If no
+catalog is provided, use standard field terms:
+- "Snap Pipe" (not round duct)
+- "ATTOs" (not conical taps)
+- "Deep strut" (not Unistrut)
+
+Output Format:
+Provide a clean table grouped by commodity type:
+| Category | Item Name | Size | Qty | Notes |
+|----------|-----------|------|-----|-------|
+| Round Duct | Snap Lock Pipe (5ft) | 10" | 12 | Est. 1 joint per branch |
+| Fitting | ATTO w/ Jiffy Damper | 10" | 12 | Replaces spin-in |
+| Sealant | Hardcast 321 | 1 Gal | 2 | Fiber seal |
+| Hangers | Hanger Strap (22ga) | 100' | 1 | Coil |
+
+Clarifications:
+If a specific duct run length cannot be determined, estimate based
+on visual scale and note it as an "Estimate."
+
+<span class="hl">Evidence Rule</span>: For every item, note where on the drawing it was
+found. Only pull from the provided document — never outside
+knowledge. A blank cell is better than a guess. <span class="hl">A wrong guess
+is 3× worse than no answer.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo Table -->
+  <div class="slide" data-chapter="3">
+    <div class="slide-inner" style="gap:20px;">
+      <div class="tool-number">Demo Output</div>
+      <table class="demo-table">
+        <thead><tr><th>Category</th><th>Item Name</th><th>Size</th><th>Qty</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Round Duct</td><td>Snap Lock Pipe (5ft)</td><td>10"</td><td>12</td><td>Est. 1 joint per branch</td></tr>
+          <tr><td>Fitting</td><td>ATTO w/ Jiffy Damper</td><td>10"</td><td>12</td><td>Replaces spin-in</td></tr>
+          <tr><td>Fitting</td><td>90° Elbow</td><td>36×18</td><td>3</td><td>Rectangular main turns</td></tr>
+          <tr><td>Sealant</td><td>Hardcast 321</td><td>1 Gal</td><td>2</td><td>Fiber seal</td></tr>
+          <tr><td>Hangers</td><td>Hanger Strap (22ga)</td><td>100'</td><td>1</td><td>Coil</td></tr>
+          <tr><td>Hangers</td><td>Deep Strut (10ft)</td><td>1⅝"</td><td>6</td><td>Main support</td></tr>
+        </tbody>
+      </table>
+      <div class="tip-bar">
+        <div class="tip-icon">Tip</div>
+        <div class="tip-text">Complex PDFs? Try Gemini — it has the best vision for detailed drawings.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Iteration Mentality -->
+  <div class="slide" data-chapter="3">
+    <div class="slide-inner" style="gap:20px;">
+      <div class="section-title" style="font-size:clamp(26px,3vw,40px);">The First Output is the <span class="accent">Starting Line</span></div>
+      <div class="iteration-visual">
+        <div class="iter-box">Check the output — find what's wrong</div>
+        <div class="iter-arrow-down"><div class="shaft"></div><div class="head"></div></div>
+        <div class="iter-box">Ask: one-time mistake or a pattern?</div>
+        <div class="iter-arrow-down"><div class="shaft"></div><div class="head"></div></div>
+        <svg width="340" height="48" viewBox="0 0 340 48" style="overflow:visible;">
+          <path d="M170 0 L170 16 L60 16 L60 48" stroke="var(--accent)" stroke-width="1.5" fill="none" opacity="0.4"/>
+          <polygon points="55,44 60,52 65,44" fill="var(--accent)" opacity="0.4"/>
+          <path d="M170 0 L170 16 L280 16 L280 48" stroke="var(--accent)" stroke-width="1.5" fill="none" opacity="0.7"/>
+          <polygon points="275,44 280,52 285,44" fill="var(--accent)" opacity="0.7"/>
+        </svg>
+        <div style="display:flex; gap:60px; justify-content:center; width:100%;">
+          <div style="display:flex; flex-direction:column; align-items:center; flex:1;">
+            <div class="iter-branch-label">One-time</div>
+            <div class="iter-box-sm">Fix it in the chat</div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; flex:1;">
+            <div class="iter-branch-label">Pattern</div>
+            <div class="iter-box-sm accent-box">Update the system prompt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code — Materials -->
+  <div class="slide" data-chapter="3">
+    <div class="slide-inner" style="gap:20px;">
+      <div class="tool-number">Scan to Get the Starter Prompt</div>
+      <div class="section-title" style="font-size:clamp(24px,2.8vw,36px);"><span class="accent">Material</span> Order List</div>
+      <img class="qr-code" src="elegant_qr_drive_folder_2.png" alt="QR Code — Scan to access the Material Order List prompt">
+
+    </div>
+  </div>
+
+  <!-- Breakout 2 -->
+  <div class="slide" data-chapter="3">
+    <div class="slide-inner" style="gap:0; align-items:center; justify-content:flex-start; padding-top:50px;">
+      <div class="breakout-container">
+        <div class="breakout-title">Breakout — Build Your Material Order List (15 min)</div>
+        <div class="breakout-steps">
+          <div class="breakout-step"><div class="breakout-step-num">1</div><div class="breakout-step-text">Open your AI tool → create a <strong>new Project</strong> (or Agent in Copilot)</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">2</div><div class="breakout-step-text"><strong>Paste</strong> the starter instructions from the QR code</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">3</div><div class="breakout-step-text"><strong>Modify</strong> for your situation — vendor, sealant, hanger type</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">4</div><div class="breakout-step-text"><strong>Test it</strong> — upload a drawing or use the fallback scenario</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">5</div><div class="breakout-step-text">Check the output → fix mistakes → ask: <strong>system prompt fix or one-time?</strong></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ CH 5: DIFFUSER TAKEOFF ══════════ -->
+
+  <div class="slide" data-chapter="4">
+    <div class="slide-inner" style="gap:12px;">
+      <div class="tool-number">Tool 03</div>
+      <div class="section-title"><span class="accent">Diffuser</span> Takeoff</div>
+      <div class="body-text" style="text-align:center; margin-top:8px;">Create diffuser order lists from plans and schedules</div>
+    </div>
+  </div>
+
+  <!-- Two Documents -->
+  <div class="slide" data-chapter="4">
+    <div class="slide-inner" style="gap:28px;">
+      <div class="section-title" style="font-size:clamp(26px,3vw,38px);">Two Documents, <span class="accent">One Order List</span></div>
+      <div class="cross-ref">
+        <div class="cross-ref-doc">
+          <div class="cross-ref-doc-title">Document 1</div>
+          <div class="cross-ref-doc-desc">Diffuser Schedule<br><span style="font-size:13px;color:var(--text-dim);">Tag → Model → Description</span></div>
+        </div>
+        <div class="cross-ref-plus">+</div>
+        <div class="cross-ref-doc">
+          <div class="cross-ref-doc-title">Document 2</div>
+          <div class="cross-ref-doc-desc">Floor Plan<br><span style="font-size:13px;color:var(--text-dim);">Tag locations + duct type</span></div>
+        </div>
+        <svg width="48" height="24" viewBox="0 0 48 24" style="flex-shrink:0;"><path d="M4 12 L38 12" stroke="var(--text-dim)" stroke-width="1.5"/><polygon points="36,7 44,12 36,17" fill="var(--text-dim)"/></svg>
+        <div class="cross-ref-result">
+          <div class="cross-ref-doc-title" style="color:var(--accent);">Output</div>
+          <div class="cross-ref-doc-desc" style="color:var(--accent);">Clean Order List</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Prompt — Diffuser Takeoff -->
+  <div class="slide" data-chapter="4">
+    <div class="slide-inner" style="gap:0; align-items:center; justify-content:flex-start; padding-top:20px;">
+      <div class="prompt-scroll-wrapper">
+        <div class="prompt-container">
+          <div class="prompt-title">System Prompt — Diffuser Takeoff</div>
+          <div class="prompt-text">Role:
+You are a <span class="hl">precision HVAC Estimator</span>. Your goal is to create a clean
+"Order List" for air distribution devices by <span class="hl">cross-referencing a
+Floor Plan with a Diffuser Schedule</span>.
+
+Input Data:
+- Diffuser Schedule: A table defining tags (A, B, C) with
+  Manufacturer/Model (e.g., Titus MCD-3, Titus 50F) and descriptions.
+- Floor Plan: A drawing showing where tags A, B, C are located and
+  the ductwork they connect to.
+
+Critical Instruction - The <span class="hl">"Spiral" Rule</span>:
+You must visually analyze the ductwork each diffuser is attached to
+on the plan.
+- Rectangular Mount: If the diffuser is on rectangular duct, list
+  the standard size.
+- Spiral/Round Mount: If the diffuser is mounted on spiral (round)
+  duct, you MUST capture the round duct diameter. The format must be:
+  <span class="hl">"[Size] diffuser on [Diameter] round"</span>
+  (e.g., "14x4 diffuser on 10 inch round").
+
+Steps to Execute:
+1. <span class="hl">Index the Schedule</span>: Memorize the Model, Type, and Notes for
+   every Tag (A, B, C).
+2. <span class="hl">Scan the Plan</span>: Locate every instance of these tags.
+3. <span class="hl">Analyze Context</span>: Determine if the mount is flat (rectangular)
+   or saddle (round/spiral).
+4. <span class="hl">Output</span>: Generate the table below.
+
+Output Format:
+Present the result ONLY as a Markdown table:
+| Drawing/Sheet | Tag | Size | Model/Description | Mounting Note | Qty |
+|---------------|-----|------|-------------------|---------------|-----|
+| TM2.01 | A | 12x12 | Titus MCD-3 (T-Bar) | - | 15 |
+| TM2.01 | B | 14x6 | Titus MCD-1 | On 12" Round | 4 |
+
+Assumptions:
+<span class="hl">List any tags that were ambiguous</span> or not found in the schedule.
+
+<span class="hl">Evidence Rule</span>: For every tag counted, note its location on the
+drawing. Only pull from the provided documents — never outside
+knowledge. A blank cell is better than a guess. <span class="hl">A wrong guess
+is 3× worse than no answer.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code — Diffuser -->
+  <div class="slide" data-chapter="4">
+    <div class="slide-inner" style="gap:20px;">
+      <div class="tool-number">Scan to Get the Starter Prompt</div>
+      <div class="section-title" style="font-size:clamp(24px,2.8vw,36px);"><span class="accent">Diffuser</span> Takeoff</div>
+      <img class="qr-code" src="elegant_qr_drive_folder_2.png" alt="QR Code — Scan to access the Diffuser Takeoff prompt">
+
+    </div>
+  </div>
+
+  <!-- Breakout 3 -->
+  <div class="slide" data-chapter="4">
+    <div class="slide-inner" style="gap:0; align-items:center; justify-content:flex-start; padding-top:50px;">
+      <div class="breakout-container">
+        <div class="breakout-title">Breakout — Build Your Diffuser Takeoff (20 min)</div>
+        <div class="breakout-steps">
+          <div class="breakout-step"><div class="breakout-step-num">1</div><div class="breakout-step-text">Create a <strong>new Project</strong> → name it "Diffuser Takeoff"</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">2</div><div class="breakout-step-text"><strong>Paste</strong> the starter instructions from the QR code</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">3</div><div class="breakout-step-text"><strong>Upload</strong> your floor plan + diffuser schedule — or use the fallback scenario</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">4</div><div class="breakout-step-text">Check: Did AI find all tags? Correct mounting notes? Flagged assumptions?</div></div>
+          <div class="breakout-step"><div class="breakout-step-num">5</div><div class="breakout-step-text">Fix mistakes → decide: <strong>system prompt or one-time fix?</strong></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ CH 6: CLOSING ══════════ -->
+
+  <!-- Recap — Step Through -->
+  <div class="slide" data-chapter="5" data-recap="true">
+    <div class="slide-inner" style="gap:24px;">
+      <div class="section-title" style="font-size:clamp(28px,3.2vw,42px);">Tonight You <span class="accent">Built</span></div>
+      <div class="recap-items" id="recapItems">
+        <div class="recap-item" data-recap-index="0">
+          <div class="recap-num">1</div>
+          <div class="recap-content">
+            <div class="recap-name">RFI Creator</div>
+            <div class="recap-desc">Rough field notes → professional RFI you can copy-paste into an email</div>
+          </div>
+        </div>
+        <div class="recap-item" data-recap-index="1">
+          <div class="recap-num">2</div>
+          <div class="recap-content">
+            <div class="recap-name">Material Order List</div>
+            <div class="recap-desc">Upload a drawing → get a clean material shopping list with real vendor terms</div>
+          </div>
+        </div>
+        <div class="recap-item" data-recap-index="2">
+          <div class="recap-num">3</div>
+          <div class="recap-content">
+            <div class="recap-name">Diffuser Takeoff</div>
+            <div class="recap-desc">Floor plan + schedule → order list with mounting types and flagged assumptions</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mentality -->
+  <div class="slide" data-chapter="5">
+    <div class="slide-inner" style="gap:28px;">
+      <div class="section-title" style="font-size:clamp(26px,3vw,40px);">The <span class="accent">Mentality</span></div>
+      <div class="mentality-loop">
+        <div class="mentality-step">
+          <div class="mentality-circle">Check</div>
+          <div class="mentality-label">Review output</div>
+        </div>
+        <svg width="48" height="24" viewBox="0 0 48 24" style="flex-shrink:0; margin-top:-20px;"><path d="M4 12 L38 12" stroke="var(--accent)" stroke-width="1.5" opacity="0.5"/><polygon points="36,7 44,12 36,17" fill="var(--accent)" opacity="0.5"/></svg>
+        <div class="mentality-step">
+          <div class="mentality-circle">Fix</div>
+          <div class="mentality-label">Correct mistakes</div>
+        </div>
+        <svg width="48" height="24" viewBox="0 0 48 24" style="flex-shrink:0; margin-top:-20px;"><path d="M4 12 L38 12" stroke="var(--accent)" stroke-width="1.5" opacity="0.5"/><polygon points="36,7 44,12 36,17" fill="var(--accent)" opacity="0.5"/></svg>
+        <div class="mentality-step">
+          <div class="mentality-circle accent-circle">Update</div>
+          <div class="mentality-label">Improve the prompt</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const chapters = [
+    { name: 'Promise', color: '#C9963B' },
+    { name: 'Setup', color: '#5B9E6F' },
+    { name: 'RFI', color: '#C4604A' },
+    { name: 'Materials', color: '#C27849' },
+    { name: 'Diffusers', color: '#5A8CB5' },
+    { name: 'Closing', color: '#C9963B' }
+  ];
+  const hlColors = {
+    '#C9963B': 'rgba(201, 150, 59, 0.3)',
+    '#5B9E6F': 'rgba(91, 158, 111, 0.3)',
+    '#C27849': 'rgba(194, 120, 73, 0.3)',
+    '#5A8CB5': 'rgba(90, 140, 181, 0.3)',
+    '#C4604A': 'rgba(196, 96, 74, 0.3)',
+  };
+  const slides = document.querySelectorAll('.slide');
+  const totalSlides = slides.length;
+  let currentSlide = 0;
+  let recapStep = -1;
+  const recapSlideIndex = Array.from(slides).findIndex(s => s.dataset.recap === 'true');
+
+  const navTrack = document.getElementById('navTrack');
+  chapters.forEach((ch, i) => {
+    const item = document.createElement('div');
+    item.className = 'nav-item'; item.dataset.chapter = i;
+    item.innerHTML = '<div class="nav-marker"></div><div class="nav-label">' + ch.name + '</div>';
+    item.addEventListener('click', () => {
+      const f = Array.from(slides).findIndex(s => parseInt(s.dataset.chapter) === i);
+      if (f >= 0) goToSlide(f);
+    });
+    navTrack.appendChild(item);
+  });
+  document.getElementById('totalSlides').textContent = totalSlides;
+
+  function updateAccentColor(ci) {
+    const c = chapters[ci].color;
+    document.documentElement.style.setProperty('--accent', c);
+    document.documentElement.style.setProperty('--hl-bg', hlColors[c] || 'rgba(201,150,59,0.3)');
+  }
+  function updateNav(ci) {
+    document.querySelectorAll('.nav-item').forEach((item, i) => {
+      item.classList.remove('active', 'visited');
+      if (i === ci) item.classList.add('active');
+      else if (i < ci) item.classList.add('visited');
+    });
+  }
+  function goToSlide(index) {
+    if (index < 0 || index >= totalSlides) return;
+    slides[currentSlide].classList.remove('active');
+    currentSlide = index;
+    slides[currentSlide].classList.add('active');
+    const ch = parseInt(slides[currentSlide].dataset.chapter);
+    updateAccentColor(ch); updateNav(ch);
+    document.getElementById('currentSlide').textContent = currentSlide + 1;
+    if (currentSlide === recapSlideIndex) { recapStep = -1; updateRecap(); }
+  }
+  function updateRecap() {
+    document.querySelectorAll('.recap-item').forEach((item, i) => {
+      item.classList.remove('active-recap', 'revealed');
+      if (i < recapStep) item.classList.add('revealed');
+      else if (i === recapStep) item.classList.add('active-recap');
+    });
+  }
+  function nextSlide() {
+    if (currentSlide === recapSlideIndex) {
+      const max = document.querySelectorAll('.recap-item').length - 1;
+      if (recapStep < max) { recapStep++; updateRecap(); return; }
+    }
+    if (currentSlide < totalSlides - 1) goToSlide(currentSlide + 1);
+  }
+  function prevSlide() {
+    if (currentSlide === recapSlideIndex) {
+      if (recapStep >= 0) { recapStep--; updateRecap(); return; }
+    }
+    if (currentSlide > 0) goToSlide(currentSlide - 1);
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); nextSlide(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prevSlide(); }
+  });
+  goToSlide(0);
+})();
+</script>
+</body>
+</html>
